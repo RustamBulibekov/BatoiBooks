@@ -1,7 +1,7 @@
 import './style.css'
 import batoiLogo from './assets/logoBatoi.png'
-import data from './src/services/datos.js'
-import * as f from './src/functions.js'
+import data from './services/datos.js'
+import * as f from '.functions.js'
 
 // 1. Render de la página
 document.querySelector('#app').innerHTML = `
