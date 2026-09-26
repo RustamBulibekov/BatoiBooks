@@ -1,7 +1,7 @@
 import './style.css'
 import batoiLogo from './assets/logoBatoi.png'
-import data from './services/datos.js'
-import * as f from '.functions.js'
+import data from './/services/datos.js'
+import * as f from './functions.js'
 
 // 1. Render de la página
 document.querySelector('#app').innerHTML = `
@@ -27,3 +27,7 @@ console.log(f.booksWithStatus(fromModule, 'good'))
 
 console.log('\n=== Precios +10% ===')
 console.log(f.incrementPriceOfbooks(books, 10))
+
+console.log('\n=== Comprobación de no-mutación ===')
+console.log('Precio original del libro 7:', books.find(b => b.id === 7).price)
+// Debe mostrar 15, NO 16.5
