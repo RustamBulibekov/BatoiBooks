@@ -109,17 +109,17 @@ describe('function booksWithStatus', () => {
 
 describe('function averagePriceOfbooks', () => {
   it('devuelve una cadena con formato "X.XX €"', () => {
-    expect(functions.averagePriceOfbooks(books)).toMatch(/^\d+\.\d{2} €$/)
+    expect(functions.averagePriceOfBooks(books)).toMatch(/^\d+\.\d{2} €$/)
   })
 
   it('calcula correctamente la media', () => {
     const total = books.reduce((sum, b) => sum + b.price, 0)
     const expected = (total / books.length).toFixed(2) + ' €'
-    expect(functions.averagePriceOfbooks(books)).toBe(expected)
+    expect(functions.averagePriceOfBooks(books)).toBe(expected)
   })
 
   it('devuelve "0.00 €" para array vacío', () => {
-    expect(functions.averagePriceOfbooks([])).toBe('0.00 €')
+    expect(functions.averagePriceOfBooks([])).toBe('0.00 €')
   })
 })
 
@@ -173,9 +173,9 @@ describe('function booksNotSold', () => {
   })
 })
 
-describe('function incrementPriceOfbooks', () => {
+describe('function incrementPriceOfBooks', () => {
   it('incrementa todos los precios un 10%', () => {
-    const result = functions.incrementPriceOfbooks(books, 10)
+    const result = functions.incrementPriceOfBooks(books, 10)
     books.forEach((b, i) => {
       expect(result[i].price).toBe(+(b.price * 1.1).toFixed(2))
     })
@@ -183,17 +183,17 @@ describe('function incrementPriceOfbooks', () => {
 
   it('NO muta el array original', () => {
     const originalPrices = books.map(b => b.price)
-    functions.incrementPriceOfbooks(books, 10)
+    functions.incrementPriceOfBooks(books, 10)
     expect(books.map(b => b.price)).toEqual(originalPrices)
   })
 
   it('devuelve un array nuevo (no la misma referencia)', () => {
-    const result = functions.incrementPriceOfbooks(books, 10)
+    const result = functions.incrementPriceOfBooks(books, 10)
     expect(result).not.toBe(books)
   })
 
   it('incrementa un 0% sin cambios', () => {
-    const result = functions.incrementPriceOfbooks(books, 0)
+    const result = functions.incrementPriceOfBooks(books, 0)
     books.forEach((b, i) => {
       expect(result[i].price).toBe(b.price)
     })
