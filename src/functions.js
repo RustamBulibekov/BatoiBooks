@@ -30,7 +30,7 @@ export function booksWithStatus(books, status) {
   return books.filter(b => b.status === status)
 }
 
-export function averagePriceOfbooks(books) {
+export function averagePriceOfBooks(books) {
   if (books.length === 0) return '0.00 €'
   const total = books.reduce((sum, b) => sum + b.price, 0)
   const avg = total / books.length
@@ -49,7 +49,7 @@ export function booksNotSold(books) {
   return books.filter(b => !b.soldDate)
 }
 
-export function incrementPriceOfbooks(books, percent) {
+export function incrementPriceOfBooks(books, percent) {
   return books.map(b => ({
     ...b,
     price: +(b.price * (1 + percent / 100)).toFixed(2)
