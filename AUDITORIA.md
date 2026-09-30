@@ -65,7 +65,7 @@ export function booksNotSold(books) {
 ## 2. Variante de `incrementPriceOfbooks` que muta el array original (incorrecta)
 
 ```javascript
-function incrementPriceOfbooks(books, percent) {
+function incrementPriceOfBooks(books, percent) {
   for (let book of books) {
     book.price = book.price * (1 + percent / 100)
   }
@@ -92,7 +92,7 @@ function incrementPriceOfbooks(books, percent) {
 ### Versión correcta
 
 ```javascript
-export function incrementPriceOfbooks(books, percent) {
+export function incrementPriceOfBooks(books, percent) {
   return books.map(book => ({
     ...book,
     price: +(book.price * (1 + percent / 100)).toFixed(2)
