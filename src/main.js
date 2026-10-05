@@ -1,9 +1,11 @@
 import './style.css'
 import batoiLogo from './assets/logoBatoi.png'
 import data from './services/datos.js'
-import * as f from './functions.js'
+import Books from './model/books.class.js'
+import Users from './model/users.class.js'
+import Modules from './model/modules.class.js'
 
-
+// 1. Render
 document.querySelector('#app').innerHTML = `
 <section id="center">
   <div class="hero">
@@ -14,19 +16,21 @@ document.querySelector('#app').innerHTML = `
 </section>
 `
 
+// 2. Crear instancias y rellenar
+const books = new Books()
+const users = new Users()
+const modules = new Modules()
 
-const { books } = data
+books.populate(data.books)
+users.populate(data.users)
+modules.populate(data.modules)
 
+// 3. Salidas por consola
+console.log('=== Libros del módulo 5021 ===')
+console.log(books.booksFromModule('5021'))
 
-console.log('=== Books ofuuser 4 ===')
-console.log(f.booksFromUser(books, 4))
-
-console.log('\n=== Módule 5021 en estara "good" ===')
-const fromModule = f.booksFromModule(books, '5021')
-console.log(f.booksWithStatus(fromModule, 'good'))
+console.log('\n=== Libros en estado "new" ===')
+console.log(books.booksWithStatus('new'))
 
 console.log('\n=== Precios +10% ===')
-console.log(f.incrementPriceOfBooks(books, 10))
-
-console.log('\n=== pruebas de no se cambia  ===')
-console.log('Precio del libro 7:', books.find(b => b.id === 7).price)
+console.log(books.incrementPriceOfBooks(10))
