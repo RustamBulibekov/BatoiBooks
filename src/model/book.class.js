@@ -24,4 +24,9 @@
             this.pages=pages;
 
         }
+
+        toString(){
+            return "ID: "+ this.id + "Published: " + this.publicher + "Price "+ this.price
+        }
     }
+    
