@@ -1,128 +1,191 @@
-# AUDITORÍA
+# AUDITORÍA — Práctica 3: Clases
 
-En este documento se analizan dos funciones escritas de forma incorrecta
-según las restricciones de diseño del proyecto:
+En este documento se analizan tres métodos de la clase `Books` escritos
+de forma incorrecta según las restricciones de diseño del proyecto:
 
 - No usar bucles `for` ni `while`.
-- No mutar el array original.
+- No mutar el array original sin control.
 - No hardcodear valores.
+- Validar los datos antes de crear/modificar.
+- Lanzar excepción cuando el elemento no existe.
 
 ---
 
-## 1. Función `booksNotSold` (incorrecta)
+## 1. Método `removeBook(bookId)` (incorrecto)
 
 ```javascript
-function booksNotSold(books) {
-  let result = []
-  for (let book of books) {
-    if (book.soldDate == null) {
-      result.push(book)
-    }
-  }
-  return result
+removeBook(bookId) {
+  this.data = this.data.filter(b => b.id !== bookId)
 }
 ```
 
 ### ¿Por qué está mal?
 
-1. **Usa un bucle `for...of`**: el enunciado prohíbe explícitamente
-   `for` y `while`. Todo debe resolverse con programación funcional
-   (`filter`, `map`, `reduce`, `find`, `some`, `every`...).
+1. **No comprueba si el libro existe.** Si el `bookId` no está en la
+   colección, el método **no hace nada y no avisa**. El enunciado pide
+   explícitamente que **lance una excepción** si no existe.
 
-2. **Muta un array auxiliar con `push`**: es un estilo imperativo,
-   menos declarativo y más difícil de leer y de encadenar con otras
-   operaciones.
+2. **`filter` crea un array nuevo.** `this.data = ...` reemplaza la
+   referencia del array. Cualquier otra parte del programa que tuviera
+   una referencia al array original dejaría de ver los cambios. Es un
+   **efecto secundario oculto**.
 
-3. **Comparación `== null` incorrecta para estos datos**: en el
-   fichero `datos.js`, el campo `soldDate` de un libro no vendido
-   es una **cadena vacía** (`""`), no `null` ni `undefined`. Por lo
-   tanto `book.soldDate == null` devuelve `false` para `""`, y la
-   función **no filtra correctamente** los libros no vendidos.
-
-4. **No documenta el comportamiento con array vacío**: aunque
-   `filter` devolvería `[]` de forma natural, conviene dejarlo
-   explícito en la versión correcta.
+3. **No devuelve nada, pero tampoco informa.** El llamador no sabe si
+   la operación tuvo efecto o no.
 
 ### Versión correcta
 
 ```javascript
-export function booksNotSold(books) {
-  return books.filter(book => !book.soldDate)
+removeBook(bookId) {
+  const index = this.data.findIndex(b => b.id === bookId)
+  if (index === -1) throw new Error(`No existe el libro con id ${bookId}`)
+  this.data.splice(index, 1)
 }
 ```
 
 ### Por qué esta versión es mejor
 
-- **Sin bucles**: usa `filter`, que es declarativo y funcional.
-- **Sin mutaciones**: devuelve un array nuevo, el original no se toca.
-- **Comparación robusta**: `!book.soldDate` es verdadero tanto para
-  `null`, como para `undefined`, como para la cadena vacía `""`.
-  Es exactamente lo que necesitan nuestros datos.
-- **Más corta y legible**: una sola línea expresa la intención.
+- **Comprueba la existencia** con `findIndex`. Si devuelve `-1`,
+  lanza una excepción — tal como pide el enunciado.
+- **`splice` muta el array original** en su sitio, sin cambiar la
+  referencia. Otras partes del código que apunten a `this.data`
+  siguen viendo el array actualizado.
+- **No crea un array intermedio**, más eficiente y más claro.
+- **El error es explícito**: el llamador sabe exactamente qué ha
+  pasado.
 
 ---
 
-## 2. Variante de `incrementPriceOfbooks` que muta el array original (incorrecta)
+## 2. Método `addBook(bookData)` (incorrecto)
 
 ```javascript
-function incrementPriceOfBooks(books, percent) {
-  for (let book of books) {
-    book.price = book.price * (1 + percent / 100)
-  }
-  return books
+addBook(bookData) {
+  const newBook = new Book({ ...bookData, id: this.data.length + 1 })
+  this.data.push(newBook)
+  return newBook
 }
 ```
 
 ### ¿Por qué está mal?
 
-1. **Usa un bucle `for...of`**: prohibido por el enunciado.
-2. **Muta el array original**: modifica el objeto `books` que le
-   llega como parámetro. Cualquier otra parte del programa que
-   mantenga una referencia a ese array verá los precios cambiados
-   sin haberlo pedido. Es un **efecto secundario oculto**.
-3. **Muta cada objeto `book`**: además de mutar el array, modifica
-   los objetos individuales, lo que rompe el principio de pureza
-   de las funciones.
-4. **Imposible de testear correctamente**: no se puede comparar el
-   estado "antes" y "después", porque el "antes" ya no existe.
-5. **No redondea el resultado**: los precios pueden quedar con
-   muchos decimales (`13.200000000000001`), lo que no es aceptable
-   para un precio.
+1. **El id se calcula como `this.data.length + 1`.** Esto **falla en
+   cuanto se elimina un libro de en medio**:
+
+   ```
+   Antes:    [id:1] [id:2] [id:3]        length = 3
+   Borramos id 2: [id:1]       [id:3]    length = 2
+   addBook(): id = 2 + 1 = 3   →  ¡DUPLICADO! (id 3 ya existe)
+   ```
+
+   Dos libros con el mismo id rompen toda la lógica de búsqueda,
+   borrado y modificación.
+
+2. **No valida si el id ya existe.** Si en el futuro se permite pasar
+   un id desde fuera, podríamos crear duplicados sin avisar.
+
+3. **No valida los datos obligatorios.** Si `bookData` viene sin
+   `userId`, `moduleCode`, `price`, etc., se crea un libro incompleto
+   sin lanzar error.
 
 ### Versión correcta
 
 ```javascript
-export function incrementPriceOfBooks(books, percent) {
-  return books.map(book => ({
-    ...book,
-    price: +(book.price * (1 + percent / 100)).toFixed(2)
-  }))
+addBook(bookData) {
+  const newId = this.data.length > 0
+    ? Math.max(...this.data.map(b => b.id)) + 1
+    : 1
+  const newBook = new Book({ ...bookData, id: newId })
+  this.data.push(newBook)
+  return newBook
 }
 ```
 
 ### Por qué esta versión es mejor
 
-- **Sin bucles**: usa `map`, que es la operación funcional natural
-  para transformar cada elemento de un array.
-- **Sin mutaciones**: crea un array nuevo y objetos nuevos gracias
-  al operador spread `...book`. El array original y sus objetos
-  quedan intactos.
-- **Función pura**: el resultado depende únicamente de sus
-  argumentos. Es predecible y fácil de testear.
-- **Redondeo correcto**: `.toFixed(2)` limita a 2 decimales y el
-  `+` delante convierte la cadena resultante en número.
-- **Componible**: al no mutar nada, se puede encadenar con otros
-  `map`, `filter`, `reduce` sin sorpresas.
+- **`Math.max(...ids) + 1` encuentra siempre el siguiente id libre**,
+  incluso después de haber borrado libros de en medio. Es **robusto
+  ante eliminaciones**.
+- **Caso especial del array vacío** (`: 1`) evita que `Math.max()` de
+  un array vacío devuelva `-Infinity`.
+- **La colección es quien asigna el id**, no el elemento. Tiene
+  sentido: solo la colección conoce todos los libros.
+- **Cuando los datos estén en una base de datos**, será el propio
+  SGBD quien asigne el id (autoincremento) al recibir el `POST`. Este
+  código se sustituirá entonces por una llamada HTTP.
+
+---
+
+## 3. Método `changeBook(newData)` (incorrecto)
+
+```javascript
+changeBook(newData) {
+  const index = this.data.findIndex(b => b.id === newData.id)
+  this.data[index] = newData // newData es un objeto plano, no una instancia de Book
+  return newData
+}
+```
+
+### ¿Por qué está mal?
+
+1. **No comprueba si el índice es `-1`.** Si el libro no existe,
+   `this.data[-1] = newData` **no da error**: crea una propiedad
+   `"-1"` en el array (que además no es un índice válido) y el
+   libro **no se modifica**. El llamador cree que todo ha ido bien.
+
+2. **Guarda un objeto plano en lugar de una instancia de `Book`.**
+   El comentario del propio enunciado lo señala: `newData` es un
+   objeto literal, no tiene los métodos de la clase. Después de
+   llamar a `changeBook`, ese elemento del array **deja de ser un
+   `Book`**, y cualquier llamada a `toString()` sobre él fallará o
+   dará un resultado incorrecto. La colección queda **corrupta**.
+
+3. **Devuelve el objeto plano**, no una instancia de `Book`, así que
+   el código que lo reciba tampoco podrá usar métodos de la clase.
+
+4. **No valida los datos** del nuevo elemento antes de guardarlo.
+
+### Versión correcta
+
+```javascript
+changeBook(bookData) {
+  const index = this.data.findIndex(b => b.id === bookData.id)
+  if (index === -1) throw new Error(`No existe el libro con id ${bookData.id}`)
+  const updatedBook = new Book(bookData)
+  this.data[index] = updatedBook
+  return updatedBook
+}
+```
+
+### Por qué esta versión es mejor
+
+- **Comprueba la existencia** con `findIndex === -1` y **lanza
+  excepción** si no se encuentra. El llamador sabe que algo ha ido
+  mal.
+- **Crea un nuevo `Book` a partir de los datos** (`new Book(bookData)`)
+  en lugar de guardar el objeto plano. Así el array sigue conteniendo
+  **instancias homogéneas** de `Book` y se preservan todos sus
+  métodos (`toString`, futuras validaciones, etc.).
+- **Devuelve una instancia de `Book`**, no un objeto literal.
+- **No rompe la invariante de la colección**: todos los elementos de
+  `this.data` son siempre `Book`.
 
 ---
 
 ## Conclusión
 
-En código que trabaja con colecciones, las funciones de array
-(`map`, `filter`, `reduce`, `find`...) son **más declarativas**,
-**más fáciles de encadenar** y **más fáciles de leer** — tanto para
-una persona como para una IA — que un bucle imperativo.
+Los tres métodos tienen el mismo patrón de fondo: **operan sobre
+`this.data` sin comprobar el estado previo y sin proteger la
+integridad de la colección**.
 
-Además, evitar mutaciones hace que las funciones sean **puras**,
-lo cual simplifica el razonamiento, las pruebas y el mantenimiento
-del código.
+- `removeBook` y `changeBook` deben **lanzar excepción cuando el
+  elemento no existe**, tal como pide el enunciado, para que el
+  llamador no pueda ignorar silenciosamente un fallo.
+- `addBook` debe **calcular el id de forma robusta** ante
+  eliminaciones, y no confiar en `this.data.length`.
+- `changeBook` debe **mantener el tipo de los elementos**: si la
+  colección almacena `Book`, debe seguir almacenando `Book` después
+  de cada operación.
+
+Además, los tres deben **validar los datos de entrada** antes de
+tocar `this.data`: una colección íntegra es la base para que el
+resto de la aplicación funcione sin sorpresas.
