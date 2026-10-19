@@ -32,19 +32,17 @@ const CONTRATO = {
   user: ['toString'],
   module: ['toString'],
   books: [
-    'populate', 'addBook', 'removeBook', 'changeBook', 'toString',
+    'fetchAll', 'addBook', 'removeBook', 'changeBook', 'toString',
     'getBookById', 'getBookIndexById', 'bookExists', 'booksFromUser',
     'booksFromModule', 'booksCheeperThan', 'booksWithStatus',
-    'averagePriceOfBooks', 'booksOfTypeNotes', 'booksNotSold',
-    'incrementPriceOfBooks'
+    'averagePriceOfBooks', 'booksOfTypeNotes', 'booksNotSold'
   ],
   users: [
-    'populate', 'addUser', 'removeUser', 'changeUser', 'toString',
+    'fetchAll', 'addUser', 'removeUser', 'changeUser', 'toString',
     'getUserById', 'getUserIndexById', 'getUserByNickName'
   ],
-  modules: ['populate', 'toString', 'getModuleByCode']
+  modules: ['fetchAll', 'toString', 'getModuleByCode']
 }
-
 describe('Contrato: ficheros y clases', () => {
   for (const fichero of Object.keys(CONTRATO)) {
     it(`src/model/${fichero}.class.js existe y exporta por defecto una clase`, () => {
