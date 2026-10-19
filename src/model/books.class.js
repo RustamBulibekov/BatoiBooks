@@ -1,52 +1,50 @@
 import Book from './book.class'
+import { fetchBooks, createBook, deleteBook, updateBook } from '../services/api'
 
 export default class Books {
   constructor() {
     this.data = []
   }
 
-  populate(booksArray) {
-    this.data = booksArray.map(b => new Book(b))
+  async fetchAll() {
+    const data = await fetchBooks()
+    this.data = data.map(b => new Book(b))
   }
 
-  addBook(bookData) {
-    const newId = this.data.length > 0
-      ? Math.max(...this.data.map(b => b.id)) + 1
-      : 1
-    const newBook = new Book({ ...bookData, id: newId })
+  async addBook(bookData) {
+    const newId = this.data.length > 0 ? Math.max(...this.data.map(b => b.id)) + 1 : 1
+    const created = await createBook({ ...bookData, id: newId })
+    const newBook = new Book(created)
     this.data.push(newBook)
     return newBook
   }
 
-  removeBook(bookId) {
-    const index = this.data.findIndex(b => b.id === bookId)
-    if (index === -1) throw new Error(`No existe el libro con id ${bookId}`)
+  async removeBook(bookId) {
+    // 1. Verificamos que existe localmente (lanza error si no)
+    const index = this.getBookIndexById(bookId)
+    // 2. Esperamos al servidor. Si falla, lanzará error y this.data NO se tocará
+    await deleteBook(bookId)
+    // 3. Solo si el servidor dice OK, borramos en memoria
     this.data.splice(index, 1)
   }
 
-  changeBook(bookData) {
-    const index = this.data.findIndex(b => b.id === bookData.id)
-    if (index === -1) throw new Error(`No existe el libro con id ${bookData.id}`)
-    const updatedBook = new Book(bookData)
+  async changeBook(bookData) {
+    const index = this.getBookIndexById(bookData.id)
+    const updated = await updateBook(bookData.id, bookData)
+    const updatedBook = new Book(updated)
     this.data[index] = updatedBook
     return updatedBook
   }
 
-  toString() {
-    return this.data.map(b => b.toString()).join('\n')
-  }
-
-  // ===== consultas heredadas de la práctica 2 =====
-  getBookById(bookId) {
-    const book = this.data.find(b => b.id === bookId)
-    if (!book) throw new Error(`No existe el libro con id ${bookId}`)
-    return book
-  }
-
+  // Consultas en memoria (síncronas)
   getBookIndexById(bookId) {
     const index = this.data.findIndex(b => b.id === bookId)
     if (index === -1) throw new Error(`No existe el libro con id ${bookId}`)
     return index
+  }
+
+  getBookById(bookId) {
+    return this.data[this.getBookIndexById(bookId)]
   }
 
   bookExists(bookId) {
@@ -83,10 +81,7 @@ export default class Books {
     return this.data.filter(b => !b.soldDate)
   }
 
-  incrementPriceOfBooks(percent) {
-    return this.data.map(b => new Book({
-      ...b,
-      price: +(b.price * (1 + percent / 100)).toFixed(2)
-    }))
+  toString() {
+    return this.data.map(b => b.toString()).join('\n')
   }
 }
