@@ -19,6 +19,11 @@ export default class Books {
     return newBook
   }
 
+
+
+
+  
+
   async removeBook(bookId) {
     // 1. Verificamos que existe localmente (lanza error si no)
     const index = this.getBookIndexById(bookId)

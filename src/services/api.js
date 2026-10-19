@@ -1,6 +1,6 @@
 const BASE_URL = 'http://localhost:3000'
 
-// ================= BOOKS =================
+// ALL FETCHS ARE HERE (getBooks, getusers and getModels)
 export async function fetchBooks() {
     const res = await fetch(`${BASE_URL}/books`)
     if (!res.ok) throw new Error(`Error ${res.status}: fallo al cargar libros`)
@@ -33,7 +33,7 @@ export async function updateBook(id, bookData) {
     return res.json()
 }
 
-// ================= USERS =================
+
 export async function fetchUsers() {
     const res = await fetch(`${BASE_URL}/users`)
     if (!res.ok) throw new Error(`Error ${res.status}: fallo al cargar usuarios`)
@@ -66,7 +66,7 @@ export async function updateUser(id, userData) {
     return res.json()
 }
 
-// ================= MODELS =================
+
 export async function fetchModules() {
     const res = await fetch(`${BASE_URL}/modules`)
     if (!res.ok) throw new Error(`Error ${res.status}: fallo al cargar modulos`)
