@@ -1,10 +1,10 @@
 import './style.css'
 import batoiLogo from './assets/logoBatoi.png'
-import data from './services/datos.js'
+
 import Books from './model/books.class.js'
 import Users from './model/users.class.js'
 import Modules from './model/modules.class.js'
-
+import {fetchBooks, fetchModels, fetchUsers} from  './services/api.js'
 // 1. Render
 document.querySelector('#app').innerHTML = `
 <section id="center">
@@ -16,21 +16,6 @@ document.querySelector('#app').innerHTML = `
 </section>
 `
 
-// 2. Crear instancias y rellenar
-const books = new Books()
-const users = new Users()
-const modules = new Modules()
 
-books.populate(data.books)
-users.populate(data.users)
-modules.populate(data.modules)
-
-// 3. Salidas por consola
-console.log('=== Libros del módulo 5021 ===')
-console.log(books.booksFromModule('5021'))
-
-console.log('\n=== Libros en estado "new" ===')
-console.log(books.booksWithStatus('new'))
-
-console.log('\n=== Precios +10% ===')
-console.log(books.incrementPriceOfBooks(10))
+const res1 = fetchBooks();
+console.log(res1)
