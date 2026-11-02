@@ -12,17 +12,12 @@ export default class Books {
   }
 
   async addBook(bookData) {
-    const newId = this.data.length > 0 ? Math.max(...this.data.map(b => b.id)) + 1 : 1
-    const created = await createBook({ ...bookData, id: newId })
+    //const newId = this.data.length > 0 ? Math.max(...this.data.map(b => b.id)) + 1 : 1
+    const created = await createBook({ ...bookData,})
     const newBook = new Book(created)
     this.data.push(newBook)
     return newBook
   }
-
-
-
-
-  
 
   async removeBook(bookId) {
     // 1. Verificamos que existe localmente (lanza error si no)
