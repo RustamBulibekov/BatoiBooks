@@ -1,11 +1,15 @@
+import Books from '../model/books.class.js'
+import Modules from '../model/modules.class.js'
+import Cart from '../model/cart.class.js'
+
 export default class Controller {
-    constructor(view, books, modules) {
+    constructor(view) {
         this.view = view
-        this.books = books
-        this.modules = modules
+        this.books = new Books()
+        this.modules = new Modules()
+        this.cart = new Cart()
         this.USER_ID = 2
     }
-
 
     async init() {
         try {
@@ -13,44 +17,103 @@ export default class Controller {
             await this.books.fetchAll()
 
             this.view.renderModules(this.modules.data)
-            this.books.data.forEach(book => {
-                const mod = this.modules.data.find(m => m.code === book.moduleCode)
-                this.view.renderBook(book, mod ? mod.cliteral : book.moduleCode)
-            })
+            this.renderList()
+
+            this.view.bindSubmitForm((data) => this.handleSave(data))
+
+            this.view.bindListActions(
+                (id) => { window.location.hash = `#edit/${id}` },
+                (id) => this.handleDelete(id),
+                (id) => this.handleAddToCart(id)
+            )
+
+            window.addEventListener('hashchange', () => this.handleRoute())
+            this.handleRoute()
+
+            // ВОТ ОНА (стоит в самом конце, чтобы не ломать загрузку #edit)
+            this.view.bindResetForm(() => { window.location.hash = '#form'; })
+
         } catch (err) {
             this.view.addMessage('Error al cargar los datos', 'error')
         }
-
-        // Связываем View с Controller (используем bind, чтобы this указывал на контроллер)
-        this.view.bindSubmitForm(this.handleAddBook.bind(this))
-        this.view.bindClickRemove(this.handleRemoveBook.bind(this))
     }
-    async handleAddBook(bookData, formElement) {
-        bookData.userId = this.USER_ID
-        try {
-            const newBook = await this.books.addBook(bookData)
-            const mod = this.modules.data.find(m => m.code === newBook.moduleCode)
-            this.view.renderBook(newBook, mod ? mod.cliteral : newBook.moduleCode)
-            this.view.addMessage('Libro añadido correctamente', 'info')
-            this.view.resetForm()
-        } catch (err) {
-            this.view.addMessage('Error al añadir libro', 'error')
+
+    renderList() {
+        this.view.clearList()
+        this.books.data.forEach(book => {
+            const mod = this.modules.data.find(m => m.code === book.moduleCode)
+            this.view.renderBook(book, mod ? mod.cliteral : book.moduleCode, this.USER_ID)
+        })
+    }
+
+    handleRoute() {
+        const hash = window.location.hash || '#list';
+        const [route, id] = hash.split('/');
+        this.view.hideAllPages();
+
+        if (route === '#list') {
+            this.view.showPage('list');
+        } else if (route === '#form') {
+            this.view.showPage('form', 'Añadir libro');
+            this.view.setFormMode('add');
+        } else if (route === '#about') {
+            this.view.showPage('about');
+        } else if (route === '#edit' && id) {
+            const book = this.books.data.find(b => b.id === Number(id));
+            if (!book) { this.view.showPage('not-found'); }
+            else if (book.userId !== this.USER_ID) {
+                this.view.addMessage('No puedes editar este libro', 'error');
+                window.location.hash = '#list';
+            } else {
+                this.view.showPage('form', 'Editar libro');
+                this.view.setFormMode('edit');
+                this.view.fillForm(book);
+            }
+        } else {
+            this.view.showPage('not-found');
         }
     }
 
-    async handleRemoveBook(bookId) {
-        if (!bookId) return
+    async handleSave(bookData) {
+        const isEditing = bookData.id !== undefined;
         try {
-            await this.books.removeBook(bookId)
-            this.view.removeBookCard(bookId)
-            this.view.addMessage('Libro eliminado correctamente', 'info')
-            this.view.clearRemoveInput()
-        } catch (err) {
-            this.view.addMessage('No se pudo borrar el libro', 'error')
+            if (isEditing) {
+                const oldBook = this.books.data.find(b => b.id === bookData.id);
+                bookData.userId = oldBook.userId;
+                bookData.soldDate = oldBook.soldDate;
+                await this.books.changeBook(bookData);
+                this.view.addMessage('Libro modificado', 'info');
+            } else {
+                bookData.userId = this.USER_ID;
+                await this.books.addBook(bookData);
+                this.view.addMessage('Libro añadido', 'info');
+            }
+            window.location.hash = '#list';
+            this.renderList();
+        } catch (err) { this.view.addMessage('Error al guardar', 'error'); }
+    }
+
+    async handleDelete(id) {
+        const book = this.books.data.find(b => b.id === id);
+        const mod = this.modules.data.find(m => m.code === book.moduleCode);
+        const name = mod ? mod.cliteral : book.moduleCode;
+        if (confirm(`¿Seguro que quieres borrar el libro ${book.id} (${name})?`)) {
+            try {
+                await this.books.removeBook(id);
+                this.renderList();
+                this.view.addMessage('Libro borrado', 'info');
+            } catch (err) { this.view.addMessage('Error al borrar', 'error'); }
         }
     }
 
-
-
-
+    handleAddToCart(id) {
+        const book = this.books.data.find(b => b.id === id);
+        if (this.cart.add(book)) {
+            this.view.updateCartCount(this.cart.count());
+            console.log('Carrito:', this.cart.items);
+            this.view.addMessage('Añadido al carrito', 'info');
+        } else {
+            this.view.addMessage('Ya está en el carrito o está vendido', 'error');
+        }
+    }
 }
