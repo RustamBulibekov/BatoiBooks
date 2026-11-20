@@ -1,5 +1,5 @@
 import Book from './book.class'
-import { fetchBooks, createBook, deleteBook, updateBook } from '../services/api'
+import { fetchBooks, createBook, deleteBook, updateBook, checkBookExists } from '../services/api'
 
 export default class Books {
   constructor() {
@@ -12,19 +12,16 @@ export default class Books {
   }
 
   async addBook(bookData) {
-    //const newId = this.data.length > 0 ? Math.max(...this.data.map(b => b.id)) + 1 : 1
-    const created = await createBook({ ...bookData,})
+    const newId = this.data.length > 0 ? Math.max(...this.data.map(b => b.id)) + 1 : 1
+    const created = await createBook({ ...bookData, id: newId })
     const newBook = new Book(created)
     this.data.push(newBook)
     return newBook
   }
 
   async removeBook(bookId) {
-    // 1. Verificamos que existe localmente (lanza error si no)
     const index = this.getBookIndexById(bookId)
-    // 2. Esperamos al servidor. Si falla, lanzará error y this.data NO se tocará
     await deleteBook(bookId)
-    // 3. Solo si el servidor dice OK, borramos en memoria
     this.data.splice(index, 1)
   }
 
@@ -36,7 +33,12 @@ export default class Books {
     return updatedBook
   }
 
-  // Consultas en memoria (síncronas)
+  // ВАЛИДАЦИЯ: Асинхронный метод
+  async bookExists(userId, moduleCode) {
+    return await checkBookExists(userId, moduleCode)
+  }
+
+  // Consultas síncronas en memoria
   getBookIndexById(bookId) {
     const index = this.data.findIndex(b => b.id === bookId)
     if (index === -1) throw new Error(`No existe el libro con id ${bookId}`)
@@ -47,41 +49,20 @@ export default class Books {
     return this.data[this.getBookIndexById(bookId)]
   }
 
-  bookExists(bookId) {
+  bookExistsInMemory(bookId) {
     return this.data.some(b => b.id === bookId)
   }
 
-  booksFromUser(userId) {
-    return this.data.filter(b => b.userId === userId)
-  }
-
-  booksFromModule(moduleCode) {
-    return this.data.filter(b => b.moduleCode === moduleCode)
-  }
-
-  booksCheeperThan(price) {
-    return this.data.filter(b => b.price <= price)
-  }
-
-  booksWithStatus(status) {
-    return this.data.filter(b => b.status === status)
-  }
-
+  booksFromUser(userId) { return this.data.filter(b => b.userId === userId) }
+  booksFromModule(moduleCode) { return this.data.filter(b => b.moduleCode === moduleCode) }
+  booksCheeperThan(price) { return this.data.filter(b => b.price <= price) }
+  booksWithStatus(status) { return this.data.filter(b => b.status === status) }
   averagePriceOfBooks() {
     if (this.data.length === 0) return '0.00 €'
     const total = this.data.reduce((sum, b) => sum + b.price, 0)
     return `${(total / this.data.length).toFixed(2)} €`
   }
-
-  booksOfTypeNotes() {
-    return this.data.filter(b => b.publisher === 'Apunts')
-  }
-
-  booksNotSold() {
-    return this.data.filter(b => !b.soldDate)
-  }
-
-  toString() {
-    return this.data.map(b => b.toString()).join('\n')
-  }
+  booksOfTypeNotes() { return this.data.filter(b => b.publisher === 'Apunts') }
+  booksNotSold() { return this.data.filter(b => !b.soldDate) }
+  toString() { return this.data.map(b => b.toString()).join('\n') }
 }

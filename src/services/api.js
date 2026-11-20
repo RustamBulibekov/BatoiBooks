@@ -1,13 +1,11 @@
 const BASE_URL = 'http://localhost:3000'
 
-// ALL FETCHS ARE HERE (getBooks, getusers and getModels)
+// ========== BOOKS ==========
 export async function fetchBooks() {
     const res = await fetch(`${BASE_URL}/books`)
-    if (!res.ok) throw new Error(`Error ${res.status}: fallo al cargar libros`)
+    if (!res.ok) throw new Error(`Error ${res.status}: no se pudieron cargar los libros`)
     return res.json()
 }
-
-
 
 export async function createBook(bookData) {
     const res = await fetch(`${BASE_URL}/books`, {
@@ -15,62 +13,44 @@ export async function createBook(bookData) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookData)
     })
-    if (!res.ok) throw new Error(`Error ${res.status}: fallo al crear libro`)
+    if (!res.ok) throw new Error(`Error ${res.status}: no se pudo crear el libro`)
     return res.json()
 }
 
-export async function deleteBook(id) {
-    const res = await fetch(`${BASE_URL}/books/${id}`, { method: 'DELETE' })
-    if (!res.ok) throw new Error(`Error ${res.status}: fallo al borrar libro`)
+export async function deleteBook(bookId) {
+    const res = await fetch(`${BASE_URL}/books/${bookId}`, { method: 'DELETE' })
+    if (!res.ok) throw new Error(`Error ${res.status}: no se pudo borrar el libro`)
     return res.json()
 }
 
-export async function updateBook(id, bookData) {
-    const res = await fetch(`${BASE_URL}/books/${id}`, {
+export async function updateBook(bookId, bookData) {
+    const res = await fetch(`${BASE_URL}/books/${bookId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookData)
     })
-    if (!res.ok) throw new Error(`Error ${res.status}: fallo al actualizar libro`)
+    if (!res.ok) throw new Error(`Error ${res.status}: no se pudo modificar el libro`)
     return res.json()
 }
 
+// ВАЛИДАЦИЯ: Проверяем, есть ли у пользователя книга этого модуля
+export async function checkBookExists(userId, moduleCode) {
+    const res = await fetch(`${BASE_URL}/books?userId=${userId}&moduleCode=${moduleCode}`)
+    if (!res.ok) throw new Error(`Error ${res.status}: no se pudo comprobar el módulo`)
+    const data = await res.json()
+    return data.length > 0
+}
 
+// ========== USERS ==========
 export async function fetchUsers() {
     const res = await fetch(`${BASE_URL}/users`)
-    if (!res.ok) throw new Error(`Error ${res.status}: fallo al cargar usuarios`)
+    if (!res.ok) throw new Error(`Error ${res.status}`)
     return res.json()
 }
 
-export async function createUser(userData) {
-    const res = await fetch(`${BASE_URL}/users`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
-    })
-    if (!res.ok) throw new Error(`Error ${res.status}: fallo al crear usuario`)
-    return res.json()
-}
-
-export async function deleteUser(id) {
-    const res = await fetch(`${BASE_URL}/users/${id}`, { method: 'DELETE' })
-    if (!res.ok) throw new Error(`Error ${res.status}: fallo al borrar usuario`)
-    return res.json()
-}
-
-export async function updateUser(id, userData) {
-    const res = await fetch(`${BASE_URL}/users/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
-    })
-    if (!res.ok) throw new Error(`Error ${res.status}: fallo al actualizar usuario`)
-    return res.json()
-}
-
-
+// ========== MODULES ==========
 export async function fetchModules() {
     const res = await fetch(`${BASE_URL}/modules`)
-    if (!res.ok) throw new Error(`Error ${res.status}: fallo al cargar modulos`)
+    if (!res.ok) throw new Error(`Error ${res.status}`)
     return res.json()
 }

@@ -20,6 +20,29 @@ export default class Controller {
             this.renderList()
 
             this.view.bindSubmitForm((data) => this.handleSave(data))
+            this.view.bindInputChanges()
+
+            this.view.bindModuleChange(async (moduleCode, currentId) => {
+                this.view.setModuleError('');
+                if (!moduleCode) return;
+
+                try {
+                    const exists = await this.books.bookExists(this.USER_ID, moduleCode);
+
+                    if (exists) {
+                        // Если мы редактируем ту же самую книгу, не считаем это дубликатом
+                        if (currentId) {
+                            // Безопасно ищем книгу в локальном массиве (без выброса ошибки)
+                            const currentBook = this.books.data.find(b => b.id === Number(currentId));
+                            if (currentBook && currentBook.moduleCode === moduleCode) return;
+                        }
+                        this.view.setModuleError('Ya tienes un libro de este módulo');
+                    }
+                } catch (err) {
+                    this.view.addMessage('No se pudo comprobar el módulo', 'error');
+                }
+                
+            });
 
             this.view.bindListActions(
                 (id) => { window.location.hash = `#edit/${id}` },
@@ -29,27 +52,18 @@ export default class Controller {
 
             window.addEventListener('hashchange', () => this.handleRoute())
             this.handleRoute()
-
-            // ВОТ ОНА (стоит в самом конце, чтобы не ломать загрузку #edit)
-            this.view.bindResetForm(() => { window.location.hash = '#form'; })
-
+            this.view.bindResetForm(() => { window.location.hash = '#form'; });
+            
         } catch (err) {
             this.view.addMessage('Error al cargar los datos', 'error')
         }
-    }
-
-    renderList() {
-        this.view.clearList()
-        this.books.data.forEach(book => {
-            const mod = this.modules.data.find(m => m.code === book.moduleCode)
-            this.view.renderBook(book, mod ? mod.cliteral : book.moduleCode, this.USER_ID)
-        })
     }
 
     handleRoute() {
         const hash = window.location.hash || '#list';
         const [route, id] = hash.split('/');
         this.view.hideAllPages();
+        this.view.clearErrors();
 
         if (route === '#list') {
             this.view.showPage('list');
@@ -59,8 +73,12 @@ export default class Controller {
         } else if (route === '#about') {
             this.view.showPage('about');
         } else if (route === '#edit' && id) {
+            // ВОТ ИСПРАВЛЕНИЕ: используем .find() вместо getBookById(), чтобы не было throw
             const book = this.books.data.find(b => b.id === Number(id));
-            if (!book) { this.view.showPage('not-found'); }
+
+            if (!book) {
+                this.view.showPage('not-found');
+            }
             else if (book.userId !== this.USER_ID) {
                 this.view.addMessage('No puedes editar este libro', 'error');
                 window.location.hash = '#list';
@@ -72,6 +90,14 @@ export default class Controller {
         } else {
             this.view.showPage('not-found');
         }
+    }
+
+    renderList() {
+        this.view.clearList()
+        this.books.data.forEach(book => {
+            const mod = this.modules.data.find(m => m.code === book.moduleCode)
+            this.view.renderBook(book, mod ? mod.cliteral : book.moduleCode, this.USER_ID)
+        })
     }
 
     async handleSave(bookData) {

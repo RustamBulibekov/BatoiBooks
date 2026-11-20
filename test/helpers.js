@@ -1,4 +1,4 @@
-// Utilidades para los tests de la rama 6-eventos.
+// Utilidades para los tests de la rama 7-validacion.
 // Simulan un json-server en memoria y cargan la aplicación desde cero en cada test.
 import { vi } from 'vitest'
 
@@ -23,8 +23,9 @@ export const MODULES = [
 ]
 
 // Los libros 1 y 8 son nuestros (userId 2). El 1 está vendido.
+// Tenemos un libro de 0613 (el 1) y otro de 0612 (el 8)
 export const BOOKS = [
-  { id: 1, userId: 2, moduleCode: '0612', publisher: 'Apunts', price: 12, pages: 25, status: 'good', photo: '', comments: '', soldDate: '2023-02-01' },
+  { id: 1, userId: 2, moduleCode: '0613', publisher: 'Apunts', price: 12, pages: 25, status: 'good', photo: '', comments: '', soldDate: '2023-02-01' },
   { id: 6, userId: 3, moduleCode: '0613', publisher: 'McGraw-Hill', price: 75, pages: 273, status: 'new', photo: '', comments: 'Sense obrir', soldDate: '' },
   { id: 7, userId: 4, moduleCode: '0613', publisher: 'McGraw-Hill', price: 15, pages: 173, status: 'bad', photo: '', comments: 'Fet pols', soldDate: '' },
   { id: 8, userId: 2, moduleCode: '0612', publisher: 'McGraw-Hill', price: 15, pages: 173, status: 'good', photo: '', comments: 'Amb notes', soldDate: '' },
@@ -72,7 +73,7 @@ export function createServer (options = {}) {
     const match = url.pathname.match(/\/(books|modules|users|sales)(?:\/([^/]+))?\/?$/)
     let body
     try { body = init.body ? JSON.parse(init.body) : undefined } catch { body = init.body }
-    calls.push({ method, path: url.pathname, body })
+    calls.push({ method, path: url.pathname, query: Object.fromEntries(url.searchParams), body })
 
     if (!match) return response(404, {})
     const [, resource, id] = match
@@ -285,3 +286,31 @@ export async function clickReset () {
 // Peticiones que ha recibido el servidor para modificar un libro (PUT o PATCH)
 export const changeCalls = (server, id) =>
   server.calls.filter(c => (c.method === 'PUT' || c.method === 'PATCH') && c.path.endsWith(`/books/${id}`))
+
+// ---------- Validación ----------
+export const FIELDS = ['moduleCode', 'publisher', 'price', 'pages', 'status']
+
+// Texto del error que se ve para un campo (en #<name>-error)
+export function errorText (name) {
+  const element = $(`#${name}-error`)
+  if (!element) throw new Error(`No existe el elemento #${name}-error para el error del campo ${name}`)
+  return element.textContent.trim()
+}
+
+// Mensaje que da jsdom en validationMessage: si sale es que no se han personalizado
+export const JSDOM_MESSAGE = 'Constraints not satisfied'
+
+// El usuario elige un módulo en el select
+export async function selectModule (code) {
+  fillForm({ moduleCode: code })
+  await flush()
+}
+
+// Peticiones para saber si un usuario ya tiene un libro de un módulo
+export const existsCalls = (server) =>
+  server.calls.filter(c => c.method === 'GET' && /\/books\/?$/.test(c.path) && 'moduleCode' in c.query)
+
+// Peticiones que modifican datos (POST, PUT, PATCH o DELETE)
+export const writeCalls = (server) => server.calls.filter(c => c.method !== 'GET')
+
+export const EMPTY_FORM = { moduleCode: '', publisher: '', price: '', pages: '', photo: '', comments: '' }
